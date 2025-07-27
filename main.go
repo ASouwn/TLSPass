@@ -1,35 +1,31 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"os"
-	"path/filepath"
+
+	"github.com/ASouwn/TLSPass/cmds"
 )
 
 func main() {
-	target, err := url.Parse("http://localhost:3274")
-	if err != nil {
-		log.Fatal(err)
+	if len(os.Args) < 2 {
+		println("No command provided.")
+		return
 	}
-	proxy := httputil.NewSingleHostReverseProxy(target)
-	// 修改请求 URL 的 Host 和 Scheme，以避免默认使用 https
-	originalDirector := proxy.Director
-	proxy.Director = func(req *http.Request) {
-		originalDirector(req)
-		req.Host = target.Host
-	}
+	cmd := os.Args[1] // 获取子命令
 
-	http.HandleFunc("/news", func(w http.ResponseWriter, r *http.Request) {
-		proxy.ServeHTTP(w, r)
-	})
-	ex, _ := os.Executable()
-	certPath := filepath.Join(filepath.Dir(ex), "sccssd.cn.pem")
-	keyPath := filepath.Join(filepath.Dir(ex), "sccssd.cn.key")
-	err = http.ListenAndServeTLS(":443", certPath, keyPath, nil)
-	if err != nil {
-		log.Fatal(err)
+	switch cmd {
+	case "start":
+		cmds.Start()
+	case "help":
+		println(
+			"TLSPass is to proxy TLS requests to a local server.\n",
+			"Server will listen on port 443 with TLS. Please ensure you have the correct certificate and key files.\n",
+			"certPath: /etc/TLSPass/tlspass.pem\n",
+			"keyPath: /etc/TLSPass/tlspass.key\n",
+			"Usage:\n",
+			"  start - Start the TLSPass server with TLS.\n",
+		)
+	default:
+		println("Unknown command:", cmd)
 	}
 }
